@@ -358,6 +358,11 @@ class GameState {
     this.violenceScore = 0;
     this.currentScene  = 'title';
     this.loopCount     = 0;
+    this.woundState    = 'none'; // none, wounded, critical, dead
+    this.resonance     = 0;      // 0-100
+    this.flags         = {};
+    this.worstWound    = 'none'; // track if critical was ever reached
+    this.attuneSuccess = false;
     this.load();
   }
 
@@ -370,6 +375,11 @@ class GameState {
         this.violenceScore = data.violenceScore || 0;
         this.currentScene  = data.currentScene  || 'title';
         this.loopCount     = data.loopCount     || 0;
+        this.woundState    = data.woundState    || 'none';
+        this.resonance     = data.resonance     || 0;
+        this.flags         = data.flags         || {};
+        this.worstWound    = data.worstWound    || 'none';
+        this.attuneSuccess = data.attuneSuccess || false;
       }
     } catch (e) {
       // ignore storage errors
@@ -382,7 +392,12 @@ class GameState {
         empathyScore:  this.empathyScore,
         violenceScore: this.violenceScore,
         currentScene:  this.currentScene,
-        loopCount:     this.loopCount
+        loopCount:     this.loopCount,
+        woundState:    this.woundState,
+        resonance:     this.resonance,
+        flags:         this.flags,
+        worstWound:    this.worstWound,
+        attuneSuccess: this.attuneSuccess
       }));
     } catch (e) {}
   }
@@ -391,15 +406,61 @@ class GameState {
     this.empathyScore  = 0;
     this.violenceScore = 0;
     this.currentScene  = 'title';
+    this.woundState    = 'none';
+    this.resonance     = 0;
+    this.worstWound    = 'none';
+    this.attuneSuccess = false;
     this.loopCount     = Math.min(this.loopCount, 9); // cap at roman numeral X
     this.save();
   }
 
   addEmpathy(n)  { this.empathyScore  += n; this.save(); }
   addViolence(n) { this.violenceScore += n; this.save(); }
+  addResonance(n) { this.resonance = Math.min(100, Math.max(0, this.resonance + n)); this.save(); }
+  setWound(state) {
+    const levels = ['none', 'wounded', 'critical', 'dead'];
+    if (!levels.includes(state)) return;
+    const currentIndex = levels.indexOf(this.woundState);
+    const newIndex = levels.indexOf(state);
+    if (newIndex > currentIndex) {
+      if (this.flags.core_stabilizer && this.woundState === 'wounded' && state === 'critical') {
+        // core stabilizer prevents one wound escalation
+        delete this.flags.core_stabilizer;
+      } else {
+        this.woundState = state;
+        if (newIndex > levels.indexOf(this.worstWound)) {
+          this.worstWound = state;
+        }
+      }
+    }
+    if (state === 'dead') {
+      this.setFlag('died_last_time');
+    }
+    this.save();
+  }
+
+  setFlag(flag) {
+    this.flags[flag] = true;
+    this.save();
+  }
+
+  hasFlag(flag) {
+    return !!this.flags[flag];
+  }
+
+  noteAttuneSuccess() {
+    this.attuneSuccess = true;
+    this.save();
+  }
 
   getEnding() {
-    // Higher empathy → empathy ending; ties and higher violence → violence ending
+    if (this.woundState === 'dead') return 'ending_severed';
+    if (this.resonance >= 80 && this.hasFlag('knows_core_truth') && this.hasFlag('child_at_peace')) {
+      return 'ending_true';
+    }
+    if (this.worstWound !== 'critical' && this.worstWound !== 'dead' && this.hasFlag('cutter_spared') && this.attuneSuccess) {
+      return 'ending_ascendant';
+    }
     return (this.empathyScore > this.violenceScore)
       ? 'ending_empathy'
       : 'ending_violence';
@@ -583,9 +644,68 @@ class GameEngine {
 
     // ── Narrative text (typewriter) ──
     this._lockChoices();
-    this._typewrite(scene.text, () => {
-      this._renderChoices(scene.choices);
+    this._typewrite(this._sceneText(scene), () => {
+      const choices = this._getSceneChoices(scene);
+      this._renderChoices(choices);
       this._unlockChoices();
+    });
+  }
+
+  _sceneText(scene) {
+    if (scene.id === 'act5_epicenter' && this.state.hasFlag('knows_core_truth')) {
+      return scene.text + `\n\n"The machine doesn't need a sacrifice. It needs a witness. It has always only ever needed a witness. None of us figured that out in time."`;
+    }
+    return scene.text;
+  }
+
+  _getSceneChoices(scene) {
+    if (!scene.choices) return [];
+
+    let choices = scene.choices.slice();
+    if (scene.id === 'act5_epicenter') {
+      const epicenterChoices = [];
+      if (this.state.resonance >= 80 && this.state.hasFlag('knows_core_truth') && this.state.hasFlag('child_at_peace') && !this.state.hasFlag('severed_the_child')) {
+        epicenterChoices.push({
+          label: 'Attune to the whole machine',
+          sub: 'Witness it instead of activating it.',
+          icon: '◈',
+          type: 'empathy',
+          next: 'ending_true',
+          empathy: 0,
+          violence: 0
+        });
+      }
+      if (this.state.worstWound !== 'critical' && this.state.worstWound !== 'dead' && this.state.hasFlag('cutter_spared') && this.state.attuneSuccess) {
+        epicenterChoices.push({
+          label: 'Activate the Core, standing your ground',
+          sub: 'Finish this the way a Tether does.',
+          icon: '⬡',
+          type: 'neutral',
+          next: 'ending_ascendant',
+          empathy: 0,
+          violence: 0
+        });
+      }
+      epicenterChoices.push({
+        label: 'Activate the Core',
+        sub: 'Complete the mission. Shatter into time.',
+        icon: '⬡',
+        type: 'neutral',
+        next: '__ENDING__',
+        empathy: 0,
+        violence: 0
+      });
+      choices = epicenterChoices;
+    }
+
+    return choices.filter(choice => {
+      if (!choice.condition) return true;
+      try {
+        return choice.condition(this.state);
+      } catch (e) {
+        console.warn('Choice condition error:', e, choice);
+        return false;
+      }
     });
   }
 
@@ -638,7 +758,7 @@ class GameEngine {
     clearTimeout(this.typewriterTimer);
 
     // Render full text immediately
-    const lines = scene.text.split('\n');
+    const lines = this._sceneText(scene).split('\n');
     this.dom.narrativeText.innerHTML = '';
     lines.forEach((line, li) => {
       this.dom.narrativeText.appendChild(document.createTextNode(line));
@@ -648,7 +768,8 @@ class GameEngine {
     });
 
     this.dom.textCursor.classList.add('hidden');
-    this._renderChoices(scene.choices);
+    const choices = this._getSceneChoices(scene);
+    this._renderChoices(choices);
     this._unlockChoices();
   }
 
@@ -728,6 +849,27 @@ class GameEngine {
     btn.style.opacity = '1';
     btn.style.borderColor = choice.type === 'empathy' ? 'var(--teal)' : choice.type === 'violence' ? 'var(--red)' : 'var(--gray-400)';
 
+    // Apply resonance deltas and flags
+    if (choice.resonance) {
+      this.state.addResonance(choice.resonance);
+    }
+    if (choice.flag) {
+      this.state.setFlag(choice.flag);
+    }
+    if (choice.noteAttune) {
+      this.state.noteAttuneSuccess();
+    }
+    if (choice.wound) {
+      this.state.setWound(choice.wound);
+      if (this.state.woundState === 'dead') {
+        setTimeout(() => {
+          this.isTransitioning = false;
+          this.renderScene('ending_severed');
+        }, 500);
+        return;
+      }
+    }
+
     // Resolve special next values
     let nextScene = choice.next;
     if (nextScene === '__ENDING__') {
@@ -749,12 +891,12 @@ class GameEngine {
     // Ash storm scenes — outdoor wasteland with heavy wind
     if (sceneId === 'title' || sceneId === 'act1_road' ||
         sceneId === 'act1_helped' || sceneId === 'act1_ignored' ||
-        sceneId === 'act4_rift') return 'ash_storm';
-    if (sceneId === 'act2_bunker') return 'bunker';
+        sceneId === 'act4_rift' || sceneId.startsWith('act4_')) return 'ash_storm';
+    if (sceneId === 'act2_bunker' || sceneId === 'act2_mireth_secret' || sceneId === 'act2_bunker_end') return 'bunker';
     if (sceneId === 'act5_epicenter') return 'epicenter';
     if (sceneId === 'ending_empathy') return 'ending_empathy';
     if (sceneId === 'ending_violence') return 'ending_violence';
-    if (sceneId === 'act3_gauntlet' || sceneId === 'act3_pacify' || sceneId === 'act3_destroy') return 'echo';
+    if (sceneId.startsWith('act3_') || sceneId.startsWith('act3b_')) return 'echo';
     return 'wasteland'; // fallback
   }
 

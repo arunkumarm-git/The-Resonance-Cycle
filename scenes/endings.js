@@ -43,3 +43,84 @@ export const endingViolenceScene = {
     }
   ]
 };
+
+export const endingAscendantScene = {
+  id: 'ending_ascendant',
+  act: 'THE TETHER WHO STAYED STANDING',
+  location: null,
+  image: 'assets/ending_ascendant.png',
+  narrator: 'THE PRIME ECHO',
+  text: `You become the one the machine had been waiting for.
+
+You do not shatter. You stay present. The Core takes you, but it does not dissolve you into a random fracture.
+
+The Prime Echo watches, not with hunger, but with recognition. The loop does not end so much as it shifts.
+
+You return to the world with a tether still attached, a possibility that not every loop must be a ruin.
+
+The Cycle turns. The light is a hard, stable teal. It is not safe. But it is something like hope.`,
+  glitch: false,
+  echoScene: true,
+  violence: false,
+  choices: [
+    {
+      label: 'Begin Again',
+      sub: 'A different kind of loop.',
+      icon: '◈',
+      type: 'empathy',
+      next: '__RESTART__',
+      empathy: 0,
+      violence: 0
+    }
+  ]
+};
+
+export const endingSeveredScene = {
+  id: 'ending_severed',
+  act: 'THE CYCLE BREAKS',
+  location: null,
+  image: 'assets/ending_severed.png',
+  narrator: 'THE PRIME ECHO',
+  text: `You died in a place that will never forget the wound you left behind.
+
+The machine does not get the witness it asked for. Instead it tears you, and the loop collapses around the sharp edges of that failure.
+
+This is not a reset. This is an ending made of broken choices and worst-case consequences.
+
+If the cycle ever starts again, it will be from a different set of decisions. Not yours.`,
+  glitch: true,
+  echoScene: false,
+  violence: true,
+  choices: [
+    {
+      label: 'Begin Again',
+      sub: 'Try to survive the loop next time.',
+      icon: '✕',
+      type: 'violence',
+      next: '__RESTART__',
+      empathy: 0,
+      violence: 0
+    }
+  ]
+};
+
+export const endingTrueScene = {
+  id: 'ending_true',
+  act: 'THE WITNESS',
+  location: null,
+  image: 'assets/ending_true.png',
+  narrator: 'THE PRIME ECHO',
+  text: `You do not activate the Core. You attune.
+
+The machine opens all at once, not as a trap but as a mind. You are not consumed. You are invited.
+
+It asks to be held, witnessed, known. In that moment the loop does not repeat. It ends, not with a reset, but with a quiet, complete acceptance.
+
+The Prime Echo is still there — but it is gentle now. The child at peace walks beside it, finally free.
+
+This is the end the machine asked for, the one the world did not expect.`,
+  glitch: false,
+  echoScene: true,
+  violence: false,
+  choices: []
+};

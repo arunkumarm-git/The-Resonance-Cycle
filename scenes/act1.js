@@ -42,11 +42,11 @@ export const act1HelpedScene = {
   violence: false,
   choices: [
     {
-      label: 'Continue to Bunker 7',
-      sub: 'Take the safe route the survivor warned about.',
-      icon: '◈',
+      label: 'Continue to the transit tunnel',
+      sub: 'You move forward, the warning still fresh in your mind.',
+      icon: '⬡',
       type: 'neutral',
-      next: 'act2_bunker',
+      next: 'act1_ambush_1',
       empathy: 0,
       violence: 0
     }
@@ -65,11 +65,11 @@ export const act1IgnoredScene = {
   violence: true,
   choices: [
     {
-      label: 'Continue to Bunker 7',
-      sub: 'Bruised, depleted, but moving.',
-      icon: '✕',
+      label: 'Continue to the transit tunnel',
+      sub: "Your pace doesn't slow. The Core is still ahead.",
+      icon: '⬡',
       type: 'neutral',
-      next: 'act2_bunker',
+      next: 'act1_ambush_1',
       empathy: 0,
       violence: 0
     }
