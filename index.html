@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Resonance Cycle — A Tether's Journey</title>
+  <meta name="description" content="A comic-style browser game set in 2142 where courier Vane must deliver Resonance Cores across a fractured world. Your choices define the loop." />
+  <meta name="theme-color" content="#0a0a0f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- CRT scanline overlay -->
+  <div id="crt-overlay" aria-hidden="true"></div>
+
+  <!-- Noise texture overlay -->
+  <div id="noise-overlay" aria-hidden="true"></div>
+
+  <!-- Main game container -->
+  <div id="game-container">
+
+    <!-- HUD: Morality meter -->
+    <div id="morality-hud" aria-label="Morality indicator" hidden>
+      <div id="hud-empathy-side">
+        <span class="hud-icon">◈</span>
+        <span class="hud-label">EMPATHY</span>
+        <div class="hud-bar-track">
+          <div id="hud-empathy-bar" class="hud-bar empathy-bar"></div>
+        </div>
+        <span id="hud-empathy-val" class="hud-val">0</span>
+      </div>
+      <div id="hud-center">
+        <span class="hud-logo">⬡</span>
+      </div>
+      <div id="hud-violence-side">
+        <span id="hud-violence-val" class="hud-val">0</span>
+        <div class="hud-bar-track">
+          <div id="hud-violence-bar" class="hud-bar violence-bar"></div>
+        </div>
+        <span class="hud-label">VIOLENCE</span>
+        <span class="hud-icon">✕</span>
+      </div>
+    </div>
+
+    <!-- Act indicator -->
+    <div id="act-indicator" hidden>
+      <span id="act-label"></span>
+    </div>
+
+    <!-- Comic panel: scene image -->
+    <div id="panel-frame">
+      <div id="panel-image-wrapper">
+        <img id="scene-image" src="" alt="" />
+        <div id="panel-vignette" aria-hidden="true"></div>
+        <div id="location-tag" hidden>
+          <span id="location-text"></span>
+        </div>
+      </div>
+      <!-- Glitch overlay for Echo scenes -->
+      <div id="glitch-overlay" aria-hidden="true"></div>
+    </div>
+
+    <!-- Narrative text area -->
+    <div id="narrative-panel">
+      <div id="narrator-label" hidden>
+        <span id="narrator-name"></span>
+      </div>
+      <p id="narrative-text"></p>
+      <span id="text-cursor" aria-hidden="true">▮</span>
+    </div>
+
+    <!-- Choice buttons -->
+    <div id="choices-panel">
+      <div id="choices-grid"></div>
+    </div>
+
+    <!-- Loop counter (shown after first ending) -->
+    <div id="loop-counter" hidden aria-label="Loop number">
+      <span class="loop-label">LOOP</span>
+      <span id="loop-number">Ⅰ</span>
+    </div>
+
+    <!-- Sound toggle -->
+    <button id="sound-toggle" aria-label="Toggle sound" title="Toggle Sound">
+      <span class="sound-icon" id="sound-icon">♪</span>
+      <span id="sound-label">SFX</span>
+    </button>
+
+  </div>
+
+  <!-- Loading screen -->
+  <div id="loading-screen">
+    <div id="loading-content">
+      <div id="loading-hexagon">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" class="hex-outline"/>
+          <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" class="hex-fill"/>
+        </svg>
+      </div>
+      <p id="loading-text">INITIALIZING RESONANCE CORE...</p>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
